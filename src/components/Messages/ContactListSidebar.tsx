@@ -23,7 +23,7 @@ const ContactListSidebar: React.FC<ContactListSidebarProps> = ({
   
   const filteredContacts = contacts.filter(contact => {
     return contact.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           contact.phoneNumber.includes(searchTerm);
+           contact.phone_number.includes(searchTerm);
   });
   
   // Sort contacts by last message timestamp (most recent first)
@@ -96,7 +96,7 @@ const ContactListSidebar: React.FC<ContactListSidebarProps> = ({
                         </p>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{contact.phoneNumber}</p>
+                    <p className="text-xs text-gray-500 truncate">{contact.phone_number}</p>
                     <p className="text-xs text-gray-500 truncate mt-1">
                       {contact.company ? `${contact.company}` : ''}
                       {contact.company && contact.position ? ` • ${contact.position}` : contact.position || ''}

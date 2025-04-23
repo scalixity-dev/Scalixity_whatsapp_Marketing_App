@@ -49,7 +49,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({
               <li key={contact.id} className="py-3 flex justify-between items-center">
                 <div>
                   <p className="font-medium">{contact.name}</p>
-                  <p className="text-sm text-gray-500">{contact.phone}</p>
+                  <p className="text-sm text-gray-500">{contact.phone_number}</p>
                   {contact.company && (
                     <p className="text-sm text-gray-500">{contact.company}</p>
                   )}

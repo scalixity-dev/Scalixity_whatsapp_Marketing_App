@@ -84,7 +84,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         <div className="ml-3">
           <p className="font-medium">{contact.name}</p>
-          <p className="text-xs text-emerald-100">{contact.phoneNumber}</p>
+          <p className="text-xs text-emerald-100">{contact.phone_number}</p>
         </div>
       </div>
       

@@ -22,7 +22,8 @@ const ContactList: React.FC<ContactListProps> = ({
   
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        contact.phone.includes(searchTerm) ||
+                        contact.phone_number.includes(searchTerm) ||
+                        (contact.email && contact.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                         (contact.company && contact.company.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
@@ -133,7 +134,7 @@ const ContactList: React.FC<ContactListProps> = ({
                     <p className="text-sm font-medium text-gray-900">{contact.name}</p>
                     <div className="flex items-center text-sm text-gray-500">
                       <Phone className="h-3 w-3 mr-1" />
-                      <span>{contact.phone}</span>
+                      <span>{contact.phone_number}</span>
                     </div>
                   </div>
                 </div>

@@ -1,34 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { Campaign, Template, Contact } from '../types';
+import { Campaign, Template, Contact, Group } from '../types';
 import CampaignCard from '../components/Campaigns/CampaignCard';
 import CampaignForm from '../components/Campaigns/CampaignForm';
+import CampaignDetails from '../components/Campaigns/CampaignDetails';
 import { campaignService } from '../services/campaignService';
 import { templateService } from '../services/templateService';
 import { contactService } from '../services/contactService';
+import { groupService } from '../services/groupService';
 
 const Campaigns: React.FC = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showNewCampaignForm, setShowNewCampaignForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch campaigns, templates, and contacts in parallel
-        const [campaignsData, templatesData, contactsData] = await Promise.all([
+        // Fetch campaigns, templates, contacts, and groups in parallel
+        const [campaignsData, templatesData, contactsData, groupsData] = await Promise.all([
           campaignService.getAllCampaigns(),
           templateService.getAllTemplates(),
-          contactService.getAllContacts()
+          contactService.getAllContacts(),
+          groupService.getAllGroups()
         ]);
         
         setCampaigns(campaignsData);
         setTemplates(templatesData);
         setContacts(contactsData);
+        setGroups(groupsData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -40,30 +46,84 @@ const Campaigns: React.FC = () => {
   }, []);
   
   const handleCampaignClick = (campaign: Campaign) => {
-    // This would navigate to a campaign detail page in a real app
-    alert(`Viewing campaign: ${campaign.name}`);
+    setSelectedCampaign(campaign);
   };
   
   const handleCreateCampaign = async (
-    campaignData: Omit<Campaign, 'id' | 'created_at'>, 
-    selectedContactIds: number[]
+    campaignData: Omit<Campaign, 'id' | 'created_at' | 'updated_at' | 'contact_count' | 'delivered_count' | 'read_count' | 'replied_count'>, 
+    selectedContactIds: number[],
+    selectedGroupIds: number[]
   ) => {
     setIsCreating(true);
     try {
-      // Create the campaign
-      const newCampaign = await campaignService.createCampaign(campaignData);
+      // Create the campaign with initial data
+      const newCampaign = await campaignService.createCampaign({
+        ...campaignData,
+        status: 'draft',
+        contact_count: 0,
+        delivered_count: 0,
+        read_count: 0,
+        replied_count: 0
+      });
       
-      // Add contacts to the campaign
-      await campaignService.addContactsToCampaign(newCampaign.id, selectedContactIds);
+      // Add contacts to the campaign if any are selected
+      if (selectedContactIds.length > 0) {
+        await campaignService.addContactsToCampaign(newCampaign.id, selectedContactIds);
+      }
       
-      // Update the local state
-      setCampaigns(prev => [...prev, newCampaign]);
+      // Add groups to the campaign if any are selected
+      if (selectedGroupIds.length > 0) {
+        await campaignService.addGroupsToCampaign(newCampaign.id, selectedGroupIds);
+      }
+      
+      // Update the local state with the complete campaign data
+      const updatedCampaign = await campaignService.getCampaignById(newCampaign.id);
+      setCampaigns(prev => [...prev, updatedCampaign]);
       setShowNewCampaignForm(false);
     } catch (error) {
       console.error('Error creating campaign:', error);
       alert('Failed to create campaign. Please try again.');
     } finally {
       setIsCreating(false);
+    }
+  };
+  
+  const handleUpdateCampaignStatus = async (campaignId: number, status: string) => {
+    try {
+      const updatedCampaign = await campaignService.updateCampaignStatus(campaignId, status);
+      setCampaigns(prev => prev.map(campaign => 
+        campaign.id === campaignId ? updatedCampaign : campaign
+      ));
+      if (selectedCampaign?.id === campaignId) {
+        setSelectedCampaign(updatedCampaign);
+      }
+    } catch (error) {
+      console.error('Error updating campaign status:', error);
+      alert('Failed to update campaign status. Please try again.');
+    }
+  };
+
+  const handleEditCampaign = async (updatedCampaign: Campaign) => {
+    try {
+      const result = await campaignService.updateCampaign(updatedCampaign);
+      setCampaigns(prev => prev.map(campaign => 
+        campaign.id === updatedCampaign.id ? result : campaign
+      ));
+      setSelectedCampaign(result);
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      alert('Failed to update campaign. Please try again.');
+    }
+  };
+
+  const handleDeleteCampaign = async (campaignId: number) => {
+    try {
+      await campaignService.deleteCampaign(campaignId);
+      setCampaigns(prev => prev.filter(campaign => campaign.id !== campaignId));
+      setSelectedCampaign(null);
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      alert('Failed to delete campaign. Please try again.');
     }
   };
   
@@ -107,10 +167,24 @@ const Campaigns: React.FC = () => {
           <CampaignForm 
             templates={templates} 
             contacts={contacts}
+            groups={groups}
             onSubmit={handleCreateCampaign}
             isLoading={isCreating}
           />
         </div>
+      )}
+      
+      {/* Campaign Details Modal */}
+      {selectedCampaign && (
+        <CampaignDetails
+          campaign={selectedCampaign}
+          templates={templates}
+          contacts={contacts}
+          groups={groups}
+          onClose={() => setSelectedCampaign(null)}
+          onEdit={handleEditCampaign}
+          onDelete={handleDeleteCampaign}
+        />
       )}
       
       {/* Campaigns Display */}
@@ -135,7 +209,8 @@ const Campaigns: React.FC = () => {
                   <CampaignCard 
                     key={campaign.id} 
                     campaign={campaign} 
-                    onClick={handleCampaignClick} 
+                    onClick={handleCampaignClick}
+                    onStatusChange={handleUpdateCampaignStatus}
                   />
                 ))}
               </div>
@@ -151,7 +226,8 @@ const Campaigns: React.FC = () => {
                   <CampaignCard 
                     key={campaign.id} 
                     campaign={campaign} 
-                    onClick={handleCampaignClick} 
+                    onClick={handleCampaignClick}
+                    onStatusChange={handleUpdateCampaignStatus}
                   />
                 ))}
               </div>
@@ -167,7 +243,8 @@ const Campaigns: React.FC = () => {
                   <CampaignCard 
                     key={campaign.id} 
                     campaign={campaign} 
-                    onClick={handleCampaignClick} 
+                    onClick={handleCampaignClick}
+                    onStatusChange={handleUpdateCampaignStatus}
                   />
                 ))}
               </div>
@@ -183,7 +260,8 @@ const Campaigns: React.FC = () => {
                   <CampaignCard 
                     key={campaign.id} 
                     campaign={campaign} 
-                    onClick={handleCampaignClick} 
+                    onClick={handleCampaignClick}
+                    onStatusChange={handleUpdateCampaignStatus}
                   />
                 ))}
               </div>

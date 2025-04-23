@@ -1,4 +1,4 @@
-const Template = require('../models/Template');
+const Template = require('../models/templateModel');
 
 class TemplateService {
   async getAllTemplates() {

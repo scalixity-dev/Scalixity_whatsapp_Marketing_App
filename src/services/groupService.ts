@@ -1,18 +1,9 @@
-import { Contact } from '../types';
-
-interface Group {
-  id: string;
-  name: string;
-  description?: string;
-  contacts?: Contact[];
-  Contacts?: Contact[];
-  contactCount?: number;
-}
+import { Contact, Group } from '../types';
 
 interface CreateGroupData {
   name: string;
   description: string;
-  contactIds: string[];
+  contactIds: number[];
 }
 
 const API_URL = 'http://localhost:5000/api';
@@ -33,7 +24,7 @@ export const groupService = {
     }
   },
 
-  getGroupById: async (id: string): Promise<Group> => {
+  getGroupById: async (id: number): Promise<Group> => {
     try {
       const response = await fetch(`${API_URL}/groups/${id}`);
       if (!response.ok) {
@@ -69,7 +60,7 @@ export const groupService = {
     }
   },
 
-  updateGroup: async (id: string, groupData: Partial<CreateGroupData>): Promise<Group> => {
+  updateGroup: async (id: number, groupData: Partial<CreateGroupData>): Promise<Group> => {
     try {
       const response = await fetch(`${API_URL}/groups/${id}`, {
         method: 'PUT',
@@ -90,7 +81,7 @@ export const groupService = {
     }
   },
 
-  deleteGroup: async (id: string): Promise<void> => {
+  deleteGroup: async (id: number): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/groups/${id}`, {
         method: 'DELETE',
@@ -104,7 +95,7 @@ export const groupService = {
     }
   },
 
-  addContactsToGroup: async (groupId: string, contactIds: string[]): Promise<Group> => {
+  addContactsToGroup: async (groupId: number, contactIds: number[]): Promise<Group> => {
     try {
       const response = await fetch(`${API_URL}/groups/${groupId}/contacts`, {
         method: 'POST',
@@ -125,7 +116,7 @@ export const groupService = {
     }
   },
 
-  removeContactFromGroup: async (groupId: string, contactId: string): Promise<Group> => {
+  removeContactFromGroup: async (groupId: number, contactId: number): Promise<Group> => {
     try {
       const response = await fetch(`${API_URL}/groups/${groupId}/contacts`, {
         method: 'DELETE',

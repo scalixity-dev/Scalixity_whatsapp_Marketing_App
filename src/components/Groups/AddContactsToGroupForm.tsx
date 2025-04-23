@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 interface Contact {
   id: string;
   name: string;
-  phone?: string;
+  phone_number?: string;
 }
 
 interface AddContactsToGroupFormProps {
@@ -49,7 +49,7 @@ const AddContactsToGroupForm: React.FC<AddContactsToGroupFormProps> = ({
                 className="mr-2"
               />
               <label htmlFor={`contact-${contact.id}`}>
-                {contact.name} {contact.phone && `(${contact.phone})`}
+                {contact.name} {contact.phone_number && `(${contact.phone_number})`}
               </label>
             </div>
           ))}

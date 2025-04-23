@@ -5,34 +5,48 @@ export type ContactStatus = 'active' | 'inactive' | 'blocked' | 'responded';
 export interface Contact {
   id: number;
   name: string;
-  phone: string;
+  phone_number: string;
   email?: string;
   company?: string;
   position?: string;
   created_at: string;
-  importedFrom: string;
-  importedAt: Date;
-  lastContacted?: Date;
+  updated_at: string;
+  imported_from: string;
+  imported_at: Date;
+  last_contacted?: Date;
   status: 'active' | 'inactive' | 'blocked' | 'responded';
   notes?: string;
 }
 
 export type CampaignStatus = 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
+export interface Group {
+  id: number;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Campaign {
   id: number;
   name: string;
   description?: string;
+  template_id: number;
   template_message: string;
   status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   scheduled_at?: string;
+  started_at?: string;
   completed_at?: string;
+  contact_count: number;
+  delivered_count: number;
+  read_count: number;
+  replied_count: number;
   created_at: string;
-  contact_count?: number;
-  delivered_count?: number;
-  read_count?: number;
-  replied_count?: number;
-  contact_ids?: number[];
+  updated_at: string;
+  template?: Template;
+  groups?: Group[];
+  contacts?: Contact[];
 }
 
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';

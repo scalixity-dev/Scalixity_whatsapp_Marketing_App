@@ -10,6 +10,7 @@ dotenv.config();
 const contactRoutes = require('./routes/contactRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const templateRoutes = require('./routes/templateRoutes');
+const campaginRoutes  = require("./routes/campaignRoutes");
 // Routes
 
 const app = express();
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/contacts', contactRoutes);
 app.use('/api/groups', groupRoutes); 
 app.use('/api/templates', templateRoutes);
+app.use('/api/campaigns',campaginRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
