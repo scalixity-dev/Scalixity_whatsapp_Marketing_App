@@ -10,15 +10,63 @@ const ImportGroupCSV: React.FC<ImportGroupCSVProps> = ({ onImport, onCancel }) =
   const [groupName, setGroupName] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
+  const [preview, setPreview] = useState<{ name: string; phone: string }[]>([]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile);
       setError('');
+      
+      try {
+        // Generate preview
+        const text = await selectedFile.text();
+        const rows = text.split('\n').map(row => row.trim()).filter(row => row);
+        
+        if (rows.length <= 1) {
+          setError('CSV file must contain header row and at least one contact');
+          setPreview([]);
+          return;
+        }
+        
+        // Check header row
+        const headerRow = rows[0].toLowerCase();
+        if (!headerRow.includes('name') || !headerRow.includes('phone')) {
+          setError('CSV file must have columns for "name" and "phone"');
+          setPreview([]);
+          return;
+        }
+        
+        // Parse header to find column indices
+        const headers = headerRow.split(',').map(h => h.trim());
+        const nameIndex = headers.findIndex(h => h === 'name');
+        const phoneIndex = headers.findIndex(h => h === 'phone');
+        
+        if (nameIndex === -1 || phoneIndex === -1) {
+          setError('Could not find required "name" and "phone" columns');
+          setPreview([]);
+          return;
+        }
+        
+        // Parse contacts with correct column mapping
+        const contactPreviews = rows.slice(1, 4).map(row => {
+          const fields = row.split(',').map(field => field.trim());
+          return {
+            name: fields[nameIndex] || '',
+            phone: fields[phoneIndex] || ''
+          };
+        });
+        
+        setPreview(contactPreviews);
+      } catch (err) {
+        setError('Error processing CSV file');
+        setPreview([]);
+        console.error('Error processing CSV:', err);
+      }
     } else {
       setError('Please select a valid CSV file');
       setFile(null);
+      setPreview([]);
     }
   };
 
@@ -33,14 +81,32 @@ const ImportGroupCSV: React.FC<ImportGroupCSVProps> = ({ onImport, onCancel }) =
       const text = await file.text();
       const rows = text.split('\n').map(row => row.trim()).filter(row => row);
       
-      // Skip header row and parse contacts
+      if (rows.length <= 1) {
+        setError('CSV file must contain header row and at least one contact');
+        return;
+      }
+      
+      // Parse header to find column indices
+      const headers = rows[0].toLowerCase().split(',').map(h => h.trim());
+      const nameIndex = headers.findIndex(h => h === 'name');
+      const phoneIndex = headers.findIndex(h => h === 'phone');
+      
+      if (nameIndex === -1 || phoneIndex === -1) {
+        setError('Could not find required "name" and "phone" columns');
+        return;
+      }
+      
+      // Parse contacts with correct column mapping
       const contacts = rows.slice(1).map(row => {
-        const [name, phone] = row.split(',').map(field => field.trim());
-        return { name, phone };
-      });
+        const fields = row.split(',').map(field => field.trim());
+        return {
+          name: fields[nameIndex] || '',
+          phone: fields[phoneIndex] || ''
+        };
+      }).filter(contact => contact.name && contact.phone);
 
       if (contacts.length === 0) {
-        setError('No contacts found in CSV file');
+        setError('No valid contacts found in CSV file');
         return;
       }
 
@@ -97,6 +163,35 @@ const ImportGroupCSV: React.FC<ImportGroupCSVProps> = ({ onImport, onCancel }) =
             </p>
           )}
         </div>
+        
+        {preview.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-1">Preview</h3>
+            <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-1 px-2">Name</th>
+                    <th className="text-left py-1 px-2">Phone</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.map((contact, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-1 px-2">{contact.name}</td>
+                      <td className="py-1 px-2">{contact.phone}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {preview.length > 3 && (
+                <p className="text-xs text-gray-500 mt-1 italic">
+                  Showing first 3 contacts of {preview.length}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 text-red-500 text-sm">
@@ -124,4 +219,4 @@ const ImportGroupCSV: React.FC<ImportGroupCSVProps> = ({ onImport, onCancel }) =
   );
 };
 
-export default ImportGroupCSV; 
+export default ImportGroupCSV;

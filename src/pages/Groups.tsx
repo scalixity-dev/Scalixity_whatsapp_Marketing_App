@@ -39,12 +39,21 @@ const Groups: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await groupService.getAllGroups();
-      setGroups(data.map(group => ({
-        ...group,
-        contacts: group.contacts || [],
-        id: String(group.id),
-        contactCount: group.contacts?.length || 0
-      })));
+      console.log('Raw groups data from API:', data);
+      
+      setGroups(data.map(group => {
+        // Handle both possible API response formats (Contacts or contacts)
+        const contactsArray = Array.isArray(group.Contacts) 
+          ? group.Contacts 
+          : (Array.isArray(group.contacts) ? group.contacts : []);
+          
+        return {
+          ...group,
+          contacts: contactsArray,
+          id: String(group.id),
+          contactCount: contactsArray.length
+        };
+      }));
     } catch (error) {
       console.error('Error fetching groups:', error);
     } finally {
@@ -64,11 +73,18 @@ const Groups: React.FC = () => {
   const handleSelectGroup = async (id: string) => {
     try {
       const group = await groupService.getGroupById(id);
+      console.log('Selected group details:', group);
+      
+      // Handle both possible API response formats
+      const contactsArray = Array.isArray(group.Contacts) 
+        ? group.Contacts 
+        : (Array.isArray(group.contacts) ? group.contacts : []);
+      
       setSelectedGroup({
         ...group,
-        contacts: group.contacts || [],
+        contacts: contactsArray,
         id: String(group.id),
-        contactCount: group.contacts?.length || 0
+        contactCount: contactsArray.length
       });
     } catch (error) {
       console.error(`Error fetching group ${id}:`, error);
@@ -77,8 +93,17 @@ const Groups: React.FC = () => {
 
   const handleCreateGroup = async (groupData: { name: string; description: string; contactIds: string[] }) => {
     try {
-      await groupService.createGroup(groupData);
-      fetchGroups();
+      const newGroup = await groupService.createGroup(groupData);
+      console.log('New group created:', newGroup);
+      
+      // Fetch all groups to ensure we have the latest data
+      await fetchGroups();
+      
+      // Also select the newly created group to show it was created successfully
+      if (newGroup && newGroup.id) {
+        handleSelectGroup(String(newGroup.id));
+      }
+      
       setShowAddForm(false);
     } catch (error) {
       console.error('Error creating group:', error);
@@ -98,7 +123,7 @@ const Groups: React.FC = () => {
     
     try {
       await groupService.updateGroup(editingGroup.id, groupData);
-      fetchGroups();
+      await fetchGroups();
       
       if (selectedGroup && selectedGroup.id === editingGroup.id) {
         handleSelectGroup(editingGroup.id);
@@ -114,7 +139,7 @@ const Groups: React.FC = () => {
   const handleDeleteGroup = async (id: string) => {
     try {
       await groupService.deleteGroup(id);
-      fetchGroups();
+      await fetchGroups();
       
       if (selectedGroup && selectedGroup.id === id) {
         setSelectedGroup(null);
@@ -156,25 +181,29 @@ const Groups: React.FC = () => {
 
   const handleImportGroup = async (groupName: string, contacts: { name: string; phone: string }[]) => {
     try {
-      // First create contacts
-      const createdContacts = await Promise.all(
-        contacts.map(contact => 
-          contactService.createContact({
+      console.log('Importing group with data:', { groupName, contacts: contacts.slice(0, 3) });
+      
+      // Use the import endpoint on the server
+      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/groups/import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: groupName,
+          description: `Imported group with ${contacts.length} contacts`,
+          contacts: contacts.map(contact => ({
             name: contact.name,
-            phoneNumber: contact.phone,
-            status: 'active'
-          })
-        )
-      );
-
-      // Then create group with the new contacts
-      await groupService.createGroup({
-        name: groupName,
-        description: `Imported group with ${contacts.length} contacts`,
-        contactIds: createdContacts.map(contact => contact.id)
+            phone: contact.phone
+          }))
+        }),
       });
 
-      fetchGroups();
+      if (!response.ok) {
+        throw new Error('Failed to import group');
+      }
+
+      await fetchGroups();
       setShowImportForm(false);
     } catch (error) {
       console.error('Error importing group:', error);

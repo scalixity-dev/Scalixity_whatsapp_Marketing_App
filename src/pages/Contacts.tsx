@@ -75,7 +75,7 @@ const Contacts: React.FC = () => {
     try {
       const updatedContact = await contactService.updateContact(id, contactData);
       setContacts(prev => prev.map(contact => 
-        contact.id === id ? updatedContact : contact
+        contact.id === Number(id) ? updatedContact : contact
       ));
       setSelectedContact(null);
     } catch (error) {
@@ -86,8 +86,8 @@ const Contacts: React.FC = () => {
   const handleDeleteContact = async (id: string) => {
     try {
       await contactService.deleteContact(id);
-      setContacts(prev => prev.filter(contact => contact.id !== id));
-      if (selectedContact?.id === id) {
+      setContacts(prev => prev.filter(contact => contact.id !== Number(id)));
+      if (selectedContact?.id === Number(id)) {
         setSelectedContact(null);
       }
     } catch (error) {
@@ -99,9 +99,9 @@ const Contacts: React.FC = () => {
     try {
       const updatedContact = await contactService.updateContactStatus(id, status);
       setContacts(prev => prev.map(contact => 
-        contact.id === id ? updatedContact : contact
+        contact.id === Number(id) ? updatedContact : contact
       ));
-      if (selectedContact?.id === id) {
+      if (selectedContact?.id === Number(id)) {
         setSelectedContact(updatedContact);
       }
     } catch (error) {
@@ -113,9 +113,9 @@ const Contacts: React.FC = () => {
     try {
       const updatedContact = await contactService.updateLastContacted(id);
       setContacts(prev => prev.map(contact => 
-        contact.id === id ? updatedContact : contact
+        contact.id === Number(id) ? updatedContact : contact
       ));
-      if (selectedContact?.id === id) {
+      if (selectedContact?.id === Number(id)) {
         setSelectedContact(updatedContact);
       }
     } catch (error) {
@@ -222,6 +222,7 @@ const Contacts: React.FC = () => {
         <ContactList 
           contacts={contacts} 
           onSelectContact={handleContactSelect}
+          selectedContactIds={[]}
         />
       )}
       

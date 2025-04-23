@@ -5,6 +5,7 @@ interface Group {
   name: string;
   description?: string;
   contacts?: Contact[];
+  Contacts?: Contact[];
   contactCount?: number;
 }
 
@@ -24,7 +25,7 @@ export const groupService = {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      // Return the data directly as the backend doesn't wrap it in a data property
+      console.log('getAllGroups response:', data);
       return data;
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -39,7 +40,7 @@ export const groupService = {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      // Return the data directly as the backend doesn't wrap it in a data property
+      console.log(`getGroupById(${id}) response:`, data);
       return data;
     } catch (error) {
       console.error(`Error fetching group ${id}:`, error);
@@ -60,7 +61,7 @@ export const groupService = {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      // Return the data directly as the backend doesn't wrap it in a data property
+      console.log('createGroup response:', data);
       return data;
     } catch (error) {
       console.error('Error creating group:', error);
@@ -81,7 +82,7 @@ export const groupService = {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      // Return the data directly as the backend doesn't wrap it in a data property
+      console.log(`updateGroup(${id}) response:`, data);
       return data;
     } catch (error) {
       console.error(`Error updating group ${id}:`, error);
@@ -116,7 +117,7 @@ export const groupService = {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      // Return the data directly as the backend doesn't wrap it in a data property
+      console.log(`addContactsToGroup(${groupId}) response:`, data);
       return data;
     } catch (error) {
       console.error(`Error adding contacts to group ${groupId}:`, error);
@@ -126,7 +127,6 @@ export const groupService = {
 
   removeContactFromGroup: async (groupId: string, contactId: string): Promise<Group> => {
     try {
-      // Fix the endpoint to match what the backend expects - send the contactIds array
       const response = await fetch(`${API_URL}/groups/${groupId}/contacts`, {
         method: 'DELETE',
         headers: {
@@ -138,7 +138,7 @@ export const groupService = {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      // Return the data directly as the backend doesn't wrap it in a data property
+      console.log(`removeContactFromGroup(${groupId}, ${contactId}) response:`, data);
       return data;
     } catch (error) {
       console.error(`Error removing contact from group:`, error);

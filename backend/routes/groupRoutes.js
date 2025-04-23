@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
         through: { attributes: [] } // Exclude join table attributes
       }]
     });
+    console.log('Groups fetched:', JSON.stringify(groups.length));
     res.json(groups);
   } catch (error) {
     console.error('Error fetching groups:', error);
@@ -33,6 +34,7 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Group not found' });
     }
     
+    console.log(`Group ${req.params.id} fetched with ${group.Contacts ? group.Contacts.length : 0} contacts`);
     res.json(group);
   } catch (error) {
     console.error('Error fetching group:', error);
@@ -44,6 +46,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, description, contactIds } = req.body;
+    console.log(`Creating group "${name}" with ${contactIds ? contactIds.length : 0} contacts`);
     
     // Create the group
     const group = await Group.create({
@@ -64,6 +67,7 @@ router.post('/', async (req, res) => {
       }]
     });
     
+    console.log(`Group created with ID ${group.id} and ${createdGroup.Contacts ? createdGroup.Contacts.length : 0} contacts`);
     res.status(201).json(createdGroup);
   } catch (error) {
     console.error('Error creating group:', error);
@@ -80,6 +84,8 @@ router.put('/:id', async (req, res) => {
     if (!group) {
       return res.status(404).json({ error: 'Group not found' });
     }
+    
+    console.log(`Updating group ${req.params.id} with ${contactIds ? contactIds.length : 'no'} contacts`);
     
     // Update group details
     await group.update({
@@ -100,6 +106,7 @@ router.put('/:id', async (req, res) => {
       }]
     });
     
+    console.log(`Group ${req.params.id} updated with ${updatedGroup.Contacts ? updatedGroup.Contacts.length : 0} contacts`);
     res.json(updatedGroup);
   } catch (error) {
     console.error('Error updating group:', error);
@@ -116,6 +123,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Group not found' });
     }
     
+    console.log(`Deleting group ${req.params.id}`);
     await group.destroy();
     res.json({ message: 'Group deleted successfully' });
   } catch (error) {
@@ -134,6 +142,7 @@ router.post('/:id/contacts', async (req, res) => {
       return res.status(404).json({ error: 'Group not found' });
     }
     
+    console.log(`Adding ${contactIds ? contactIds.length : 0} contacts to group ${req.params.id}`);
     await group.addContacts(contactIds);
     
     // Fetch the updated group with its contacts
@@ -144,6 +153,7 @@ router.post('/:id/contacts', async (req, res) => {
       }]
     });
     
+    console.log(`Group ${req.params.id} now has ${updatedGroup.Contacts ? updatedGroup.Contacts.length : 0} contacts`);
     res.json(updatedGroup);
   } catch (error) {
     console.error('Error adding contacts to group:', error);
@@ -161,6 +171,7 @@ router.delete('/:id/contacts', async (req, res) => {
       return res.status(404).json({ error: 'Group not found' });
     }
     
+    console.log(`Removing ${contactIds ? contactIds.length : 0} contacts from group ${req.params.id}`);
     await group.removeContacts(contactIds);
     
     // Fetch the updated group with its contacts
@@ -171,6 +182,7 @@ router.delete('/:id/contacts', async (req, res) => {
       }]
     });
     
+    console.log(`Group ${req.params.id} now has ${updatedGroup.Contacts ? updatedGroup.Contacts.length : 0} contacts`);
     res.json(updatedGroup);
   } catch (error) {
     console.error('Error removing contacts from group:', error);
@@ -183,19 +195,20 @@ router.post('/import', async (req, res) => {
   try {
     const { name, description, contacts } = req.body;
     
+    console.log(`Importing ${contacts ? contacts.length : 0} contacts to new group "${name}"`);
+    
     // Create the group
     const group = await Group.create({
       name,
-      description
+      description: description || `Imported group with ${contacts.length} contacts`
     });
     
     // Create contacts and add them to the group
     const createdContacts = await Promise.all(
       contacts.map(contact => 
         Contact.create({
-          name: contact.name,
-          phoneNumber: contact.phone,
-          // Include other fields from the updated Contact model
+          name: contact.name, // Use name field from CSV
+          phoneNumber: contact.phone, // Use phone field from CSV
           company: contact.company || null,
           position: contact.position || null,
           importedFrom: 'csv-import',
@@ -216,6 +229,7 @@ router.post('/import', async (req, res) => {
       }]
     });
     
+    console.log(`Imported group created with ID ${group.id} and ${createdGroup.Contacts ? createdGroup.Contacts.length : 0} contacts`);
     res.status(201).json(createdGroup);
   } catch (error) {
     console.error('Error importing contacts and creating group:', error);
