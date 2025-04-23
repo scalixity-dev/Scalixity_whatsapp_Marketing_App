@@ -14,10 +14,34 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
 }) => {
   const [name, setName] = useState(initialTemplate?.name || '');
   const [content, setContent] = useState(initialTemplate?.content || '');
+  const [errors, setErrors] = useState<{ name?: string; content?: string }>({});
+  
+  const validateForm = (): boolean => {
+    const newErrors: { name?: string; content?: string } = {};
+    
+    if (!name.trim()) {
+      newErrors.name = 'Template name is required';
+    }
+    
+    if (!content.trim()) {
+      newErrors.content = 'Template content is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ name, content });
+    
+    if (validateForm()) {
+      const templateData: Omit<Template, 'id' | 'createdAt'> = {
+        name,
+        content,
+      };
+      
+      onSubmit(templateData);
+    }
   };
   
   return (
@@ -33,10 +57,14 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+              className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
+                errors.name ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter template name"
-              required
             />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+            )}
           </div>
           
           <div>
@@ -48,10 +76,14 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={8}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+              className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 ${
+                errors.content ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter template content with placeholders like {{name}}, {{company}}"
-              required
             />
+            {errors.content && (
+              <p className="mt-1 text-sm text-red-600">{errors.content}</p>
+            )}
             
             <div className="mt-2 text-xs text-gray-500">
               <p className="font-medium">Available placeholders:</p>
@@ -70,11 +102,11 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
           <div className="pt-3">
             <button
               type="submit"
-              disabled={!name.trim() || !content.trim() || isLoading}
+              disabled={isLoading}
               className={`w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                name.trim() && content.trim() && !isLoading
-                  ? 'bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'
-                  : 'bg-gray-300 cursor-not-allowed'
+                isLoading
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'
               }`}
             >
               {isLoading ? (

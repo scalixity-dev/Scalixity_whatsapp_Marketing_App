@@ -1,68 +1,67 @@
+import axios from 'axios';
 import { Template } from '../types';
-import { mockTemplates } from '../data/mockData';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 class TemplateService {
-  private templates: Template[] = [...mockTemplates];
-  
-  getAllTemplates(): Promise<Template[]> {
-    return Promise.resolve([...this.templates]);
-  }
-  
-  getTemplateById(id: number): Promise<Template | undefined> {
-    const template = this.templates.find(t => t.id === id);
-    return Promise.resolve(template);
-  }
-  
-  createTemplate(template: Omit<Template, 'id' | 'createdAt'>): Promise<Template> {
-    const newTemplate: Template = {
-      ...template,
-      id: Math.max(0, ...this.templates.map(t => t.id)) + 1,
-      createdAt: new Date().toISOString(),
-    };
-    
-    this.templates.push(newTemplate);
-    return Promise.resolve(newTemplate);
-  }
-  
-  updateTemplate(id: number, templateData: Partial<Template>): Promise<Template | undefined> {
-    const index = this.templates.findIndex(t => t.id === id);
-    if (index === -1) {
-      return Promise.resolve(undefined);
+  async getAllTemplates(): Promise<Template[]> {
+    try {
+      const response = await axios.get(`${API_URL}/templates`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      throw error;
     }
-    
-    this.templates[index] = { ...this.templates[index], ...templateData };
-    return Promise.resolve(this.templates[index]);
   }
-  
-  deleteTemplate(id: number): Promise<boolean> {
-    const initialLength = this.templates.length;
-    this.templates = this.templates.filter(t => t.id !== id);
-    return Promise.resolve(this.templates.length < initialLength);
-  }
-  
-  // Mark template as used
-  markTemplateAsUsed(id: number): Promise<Template | undefined> {
-    return this.updateTemplate(id, { lastUsed: new Date().toISOString() });
-  }
-  
-  // Apply template with variable substitution
-  applyTemplate(templateId: number, variables: Record<string, string>): Promise<string> {
-    const template = this.templates.find(t => t.id === templateId);
-    if (!template) {
-      return Promise.resolve('Template not found');
+
+  async getTemplateById(id: number): Promise<Template> {
+    try {
+      const response = await axios.get(`${API_URL}/templates/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching template ${id}:`, error);
+      throw error;
     }
-    
-    let content = template.content;
-    
-    // Replace all variables in the content
-    for (const [key, value] of Object.entries(variables)) {
-      content = content.replace(new RegExp(`{{${key}}}`, 'g'), value);
+  }
+
+  async createTemplate(templateData: Omit<Template, 'id' | 'createdAt'>): Promise<Template> {
+    try {
+      const response = await axios.post(`${API_URL}/templates`, templateData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating template:', error);
+      throw error;
     }
-    
-    // Mark template as used
-    this.markTemplateAsUsed(templateId);
-    
-    return Promise.resolve(content);
+  }
+
+  async updateTemplate(id: number, templateData: Omit<Template, 'id' | 'createdAt'>): Promise<Template> {
+    try {
+      const response = await axios.put(`${API_URL}/templates/${id}`, templateData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating template ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteTemplate(id: number): Promise<boolean> {
+    try {
+      await axios.delete(`${API_URL}/templates/${id}`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting template ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async updateTemplateUsage(id: number): Promise<Template> {
+    try {
+      const response = await axios.patch(`${API_URL}/templates/${id}/used`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating template usage ${id}:`, error);
+      throw error;
+    }
   }
 }
 

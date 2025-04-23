@@ -1,6 +1,7 @@
 import React from 'react';
 import { Template } from '../../types';
 import { FileText, Clock, Edit, Trash2 } from 'lucide-react';
+import { templateService } from '../../services/templateService';
 
 interface TemplateCardProps {
   template: Template;
@@ -32,11 +33,23 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
     e.stopPropagation();
     onDelete(template.id);
   };
+
+  const handlePreview = async () => {
+    try {
+      // Update last used timestamp
+      await templateService.updateTemplateUsage(template.id);
+      onPreview(template);
+    } catch (error) {
+      console.error('Error updating template usage:', error);
+      // Still show preview even if usage update fails
+      onPreview(template);
+    }
+  };
   
   return (
     <div 
       className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4 cursor-pointer"
-      onClick={() => onPreview(template)}
+      onClick={handlePreview}
     >
       <div className="flex justify-between items-start">
         <div className="flex items-center">
