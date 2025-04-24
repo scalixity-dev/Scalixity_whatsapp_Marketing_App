@@ -208,7 +208,7 @@ router.post('/import', async (req, res) => {
       contacts.map(contact => 
         Contact.create({
           name: contact.name, // Use name field from CSV
-          phoneNumber: contact.phone, // Use phone field from CSV
+          phoneNumber: contact.phone_number, // Use phone field from CSV
           company: contact.company || null,
           position: contact.position || null,
           importedFrom: 'csv-import',

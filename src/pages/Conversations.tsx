@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Contact, Message } from '../types';
 import ContactListSidebar from '../components/Messages/ContactListSidebar';
 import ChatInterface from '../components/Messages/ChatInterface';
@@ -11,6 +11,10 @@ const Conversations: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastMessageTimestamps, setLastMessageTimestamps] = useState<Record<number, string>>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<Message['messageType']>('text');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Fetch contacts on component mount
   useEffect(() => {
@@ -83,23 +87,111 @@ const Conversations: React.FC = () => {
     setSelectedContact(contact);
   };
   
-  const handleSendMessage = async (content: string, messageType: Message['messageType']) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    
+    // Determine message type based on file type
+    if (file.type.startsWith('image/')) {
+      setMessageType('image');
+    } else if (file.type.startsWith('audio/')) {
+      setMessageType('audio');
+    } else if (file.type.startsWith('video/')) {
+      setMessageType('video');
+    } else {
+      setMessageType('document');
+    }
+
+    // Create preview URL for images and videos
+    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  const handleSendMessage = async (content: string, type: Message['messageType'] = 'text') => {
     if (!selectedContact) return;
     
+    let messageContent = content;
+    let mediaUrl: string | undefined;
+
+    // If we have a selected file, upload it first
+    if (selectedFile) {
+      try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('messageType', type);
+
+        // Upload the file
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        const { url } = await uploadResponse.json();
+        mediaUrl = url;
+        messageContent = selectedFile.name; // Use filename as content for non-text messages
+
+        // Reset file selection
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        return;
+      }
+    }
+    
+    // Create a temporary message object to show immediately
+    const tempMessage: Message = {
+      id: Date.now(), // Temporary ID
+      contactId: selectedContact.id,
+      direction: 'outgoing',
+      content: messageContent,
+      messageType: type,
+      timestamp: new Date().toISOString(),
+      status: 'pending',
+      isCampaignMessage: false
+    };
+
+    // Update the messages state immediately with the temporary message
+    setMessages(prevMessages => [...prevMessages, tempMessage]);
+    
+    // Update the last message timestamp for this contact
+    setLastMessageTimestamps(prev => ({
+      ...prev,
+      [selectedContact.id]: tempMessage.timestamp
+    }));
+
     try {
-      // Send the message
+      // Send the message to the backend
       const newMessage = await messageService.sendMessage({
         contactId: selectedContact.id,
         direction: 'outgoing',
-        content,
-        messageType,
+        content: messageContent,
+        messageType: type,
+        mediaUrl,
         isCampaignMessage: false
       });
       
-      // Update the messages state immediately with the pending message
-      setMessages(prevMessages => [...prevMessages, newMessage]);
+      // Replace the temporary message with the actual message from the backend
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === tempMessage.id ? newMessage : msg
+        )
+      );
       
-      // Update the last message timestamp for this contact
+      // Update the last message timestamp with the actual message timestamp
       setLastMessageTimestamps(prev => ({
         ...prev,
         [selectedContact.id]: newMessage.timestamp
@@ -157,6 +249,10 @@ const Conversations: React.FC = () => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      // If there's an error, remove the temporary message
+      setMessages(prevMessages => 
+        prevMessages.filter(msg => msg.id !== tempMessage.id)
+      );
     }
   };
   
@@ -191,7 +287,12 @@ const Conversations: React.FC = () => {
             <ChatInterface 
               messages={messages} 
               contact={selectedContact} 
-              onSendMessage={handleSendMessage} 
+              onSendMessage={handleSendMessage}
+              selectedFile={selectedFile}
+              previewUrl={previewUrl}
+              onFileSelect={handleFileSelect}
+              fileInputRef={fileInputRef}
+              messageType={messageType}
             />
           ) : (
             <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">

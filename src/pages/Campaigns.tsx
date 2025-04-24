@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Play, Pause, RefreshCw } from 'lucide-react';
 import { Campaign, Template, Contact, Group } from '../types';
 import CampaignCard from '../components/Campaigns/CampaignCard';
 import CampaignForm from '../components/Campaigns/CampaignForm';
@@ -56,7 +56,6 @@ const Campaigns: React.FC = () => {
   ) => {
     setIsCreating(true);
     try {
-      // Create the campaign with initial data
       const newCampaign = await campaignService.createCampaign({
         ...campaignData,
         status: 'draft',
@@ -66,17 +65,14 @@ const Campaigns: React.FC = () => {
         replied_count: 0
       });
       
-      // Add contacts to the campaign if any are selected
       if (selectedContactIds.length > 0) {
         await campaignService.addContactsToCampaign(newCampaign.id, selectedContactIds);
       }
       
-      // Add groups to the campaign if any are selected
       if (selectedGroupIds.length > 0) {
         await campaignService.addGroupsToCampaign(newCampaign.id, selectedGroupIds);
       }
       
-      // Update the local state with the complete campaign data
       const updatedCampaign = await campaignService.getCampaignById(newCampaign.id);
       setCampaigns(prev => [...prev, updatedCampaign]);
       setShowNewCampaignForm(false);
@@ -105,7 +101,7 @@ const Campaigns: React.FC = () => {
 
   const handleEditCampaign = async (updatedCampaign: Campaign) => {
     try {
-      const result = await campaignService.updateCampaign(updatedCampaign);
+      const result = await campaignService.updateCampaign(updatedCampaign.id, updatedCampaign);
       setCampaigns(prev => prev.map(campaign => 
         campaign.id === updatedCampaign.id ? result : campaign
       ));
@@ -161,7 +157,6 @@ const Campaigns: React.FC = () => {
         </button>
       </div>
       
-      {/* New Campaign Form */}
       {showNewCampaignForm && (
         <div className="mb-6">
           <CampaignForm 
@@ -174,7 +169,6 @@ const Campaigns: React.FC = () => {
         </div>
       )}
       
-      {/* Campaign Details Modal */}
       {selectedCampaign && (
         <CampaignDetails
           campaign={selectedCampaign}
@@ -187,7 +181,6 @@ const Campaigns: React.FC = () => {
         />
       )}
       
-      {/* Campaigns Display */}
       {campaigns.length === 0 && !showNewCampaignForm ? (
         <div className="bg-white p-6 rounded-lg shadow-md text-center">
           <p className="text-gray-500 mb-4">No campaigns found</p>
@@ -200,7 +193,6 @@ const Campaigns: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Active Campaigns */}
           {activeCampaigns.length > 0 && (
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-3">Active Campaigns</h2>
@@ -217,7 +209,6 @@ const Campaigns: React.FC = () => {
             </div>
           )}
           
-          {/* Scheduled Campaigns */}
           {scheduledCampaigns.length > 0 && (
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-3">Scheduled Campaigns</h2>
@@ -234,7 +225,6 @@ const Campaigns: React.FC = () => {
             </div>
           )}
           
-          {/* Draft Campaigns */}
           {draftCampaigns.length > 0 && (
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-3">Draft Campaigns</h2>
@@ -251,7 +241,6 @@ const Campaigns: React.FC = () => {
             </div>
           )}
           
-          {/* Completed Campaigns */}
           {completedCampaigns.length > 0 && (
             <div>
               <h2 className="text-lg font-medium text-gray-900 mb-3">Completed Campaigns</h2>

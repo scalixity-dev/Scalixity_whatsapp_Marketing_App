@@ -27,7 +27,7 @@ const generateCSV = (contacts) => {
   try {
     const records = contacts.map(contact => ({
       name: contact.name,
-      phone_number: contact.phoneNumber,
+      phone_number: contact.phone_number,
       company: contact.company || '',
       position: contact.position || '',
       status: contact.status,

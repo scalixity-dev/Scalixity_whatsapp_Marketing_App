@@ -1,87 +1,64 @@
 import { Message } from '../types';
-import { mockMessages } from '../data/mockData';
+import axios from 'axios';
+import API_CONFIG from '../config/api';
+
+const api = axios.create({
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
+  headers: API_CONFIG.HEADERS
+});
 
 class MessageService {
-  private messages: Message[] = [...mockMessages];
+  async getAllMessages(): Promise<Message[]> {
+    const response = await api.get('/messages');
+    return response.data;
+  }
   
-  getAllMessages(): Promise<Message[]> {
-    return Promise.resolve([...this.messages]);
+  async getMessagesByContact(contactId: number): Promise<Message[]> {
+    const response = await api.get(`/messages/contact/${contactId}`);
+    return response.data;
+  }
+  
+  async sendMessage(message: Omit<Message, 'id' | 'timestamp' | 'status'>): Promise<Message> {
+    const response = await api.post('/messages/send', {
+      contactId: message.contactId,
+      content: message.content,
+      messageType: message.messageType || 'text',
+      isCampaignMessage: message.isCampaignMessage || false
+    });
+    return response.data;
+  }
+  
+  async updateMessageStatus(messageId: number, status: Message['status']): Promise<void> {
+    await api.put(`/messages/${messageId}/status`, { status });
+  }
+  
+  // Simulate receiving a message from a contact (this would typically be handled by WebSocket)
+  async receiveMessage(contactId: number, content: string, messageType: Message['messageType'] = 'text'): Promise<Message> {
+    // In a real implementation, this would be triggered by a WebSocket event
+    // For now, we'll create a message directly through the API
+    const response = await api.post('/messages/send', {
+      contactId,
+      content,
+      messageType,
+      direction: 'incoming',
+      status: 'delivered'
+    });
+    return response.data;
   }
   
   getMessageById(id: number): Promise<Message | undefined> {
-    const message = this.messages.find(m => m.id === id);
-    return Promise.resolve(message);
-  }
-  
-  getMessagesByContact(contactId: number): Promise<Message[]> {
-    const contactMessages = this.messages.filter(m => m.contactId === contactId);
-    return Promise.resolve([...contactMessages]);
+    // This method is no longer used in the new implementation
+    throw new Error('Method not implemented');
   }
   
   getMessagesByCampaign(campaignId: number): Promise<Message[]> {
-    const campaignMessages = this.messages.filter(m => m.campaignId === campaignId);
-    return Promise.resolve([...campaignMessages]);
-  }
-  
-  sendMessage(message: Omit<Message, 'id' | 'timestamp' | 'status'>): Promise<Message> {
-    const newMessage: Message = {
-      ...message,
-      id: Math.max(0, ...this.messages.map(m => m.id)) + 1,
-      timestamp: new Date().toISOString(),
-      status: 'pending'
-    };
-    
-    this.messages.push(newMessage);
-    
-    // Simulate message delivery process
-    setTimeout(() => {
-      this.updateMessageStatus(newMessage.id, 'sent');
-      
-      setTimeout(() => {
-        this.updateMessageStatus(newMessage.id, 'delivered');
-        
-        // Simulate read receipt for some messages
-        if (Math.random() > 0.3) {
-          setTimeout(() => {
-            this.updateMessageStatus(newMessage.id, 'read');
-          }, Math.random() * 60000); // Between 0 and 60 seconds
-        }
-      }, Math.random() * 3000 + 1000); // Between 1 and 4 seconds
-    }, Math.random() * 2000 + 500); // Between 0.5 and 2.5 seconds
-    
-    return Promise.resolve(newMessage);
-  }
-  
-  updateMessageStatus(id: number, status: Message['status']): Promise<Message | undefined> {
-    const index = this.messages.findIndex(m => m.id === id);
-    if (index === -1) {
-      return Promise.resolve(undefined);
-    }
-    
-    this.messages[index] = { ...this.messages[index], status };
-    return Promise.resolve(this.messages[index]);
-  }
-  
-  // Simulate receiving a message from a contact
-  receiveMessage(contactId: number, content: string, messageType: Message['messageType'] = 'text', mediaUrl?: string): Promise<Message> {
-    const newMessage: Message = {
-      id: Math.max(0, ...this.messages.map(m => m.id)) + 1,
-      contactId,
-      direction: 'incoming',
-      content,
-      messageType,
-      mediaUrl,
-      timestamp: new Date().toISOString(),
-      status: 'read', // Incoming messages are always marked as read
-      isCampaignMessage: false
-    };
-    
-    this.messages.push(newMessage);
-    return Promise.resolve(newMessage);
+    // This method is no longer used in the new implementation
+    throw new Error('Method not implemented');
   }
   
   // Bulk send campaign messages
-  sendCampaignMessages(campaignId: number, contactIds: number[], messageTemplate: string): Promise<Message[]> {
+  async sendCampaignMessages(campaignId: number, contactIds: number[], messageTemplate: string): Promise<Message[]> {
     const sentMessages: Promise<Message>[] = contactIds.map(contactId => {
       // Here we would normally replace placeholders in the template with contact info
       // For simplicity, we'll just use the template as is

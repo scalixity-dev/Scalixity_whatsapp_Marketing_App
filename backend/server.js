@@ -11,6 +11,8 @@ const contactRoutes = require('./routes/contactRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const templateRoutes = require('./routes/templateRoutes');
 const campaginRoutes  = require("./routes/campaignRoutes");
+const messageRoutes = require('./routes/messageRoutes');
+const webhookRoutes = require('./routes/webhookRoutes');
 // Routes
 
 const app = express();
@@ -29,6 +31,9 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/groups', groupRoutes); 
 app.use('/api/templates', templateRoutes);
 app.use('/api/campaigns',campaginRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/webhook', webhookRoutes); 
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

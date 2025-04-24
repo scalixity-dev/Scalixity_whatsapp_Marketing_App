@@ -42,6 +42,11 @@ class CampaignService {
   async updateMessageStatus(campaignId: number, contactId: number, status: string): Promise<void> {
     await api.patch(`/campaigns/${campaignId}/messages/${contactId}/status`, { status });
   }
+
+  async sendCampaignMessages(id: number): Promise<{ success: boolean; message: string }> {
+    const response = await api.post(`/campaigns/${id}/send`);
+    return response.data;
+  }
 }
 
 export const campaignService = new CampaignService();

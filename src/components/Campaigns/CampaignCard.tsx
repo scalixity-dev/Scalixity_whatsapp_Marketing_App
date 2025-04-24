@@ -1,14 +1,17 @@
 import React from 'react';
 import { Campaign } from '../../types';
-import { Calendar, Users, MessageSquare, Eye, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface CampaignCardProps {
   campaign: Campaign;
   onClick: (campaign: Campaign) => void;
-  onStatusChange: (campaignId: number, status: string) => void;
+  onStatusChange?: (campaignId: number, status: string) => void;
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick, onStatusChange }) => {
+  const handleClick = () => {
+    onClick(campaign);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft':
@@ -16,9 +19,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick, onStatus
       case 'scheduled':
         return 'bg-blue-100 text-blue-800';
       case 'in_progress':
-        return 'bg-emerald-100 text-emerald-800';
+        return 'bg-yellow-100 text-yellow-800';
       case 'completed':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-green-100 text-green-800';
       case 'failed':
         return 'bg-red-100 text-red-800';
       default:
@@ -61,43 +64,23 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick, onStatus
 
   return (
     <div 
-      className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => onClick(campaign)}
+      className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={handleClick}
     >
       <div className="flex justify-between items-start mb-2">
         <h3 className="text-lg font-medium text-gray-900">{campaign.name}</h3>
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
-          {getStatusIcon(campaign.status)}
-          <span className="ml-1 capitalize">{campaign.status.replace('_', ' ')}</span>
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(campaign.status)}`}>
+          {campaign.status.replace('_', ' ')}
         </span>
       </div>
       
-      <p className="text-sm text-gray-500 mb-4 line-clamp-2">{campaign.description}</p>
+      <p className="text-gray-600 text-sm mb-4">{campaign.description}</p>
       
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="flex items-center text-sm text-gray-600">
-          <Calendar className="h-4 w-4 mr-1" />
-          <span>{formatDate(campaign.created_at)}</span>
-        </div>
-        <div className="flex items-center text-sm text-gray-600">
-          <Users className="h-4 w-4 mr-1" />
-          <span>{campaign.contact_count} contacts</span>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-3 gap-2">
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-sm font-medium text-gray-900">{campaign.delivered_count}</div>
-          <div className="text-xs text-gray-500">Delivered</div>
-        </div>
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-sm font-medium text-gray-900">{campaign.read_count}</div>
-          <div className="text-xs text-gray-500">Read</div>
-        </div>
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-sm font-medium text-gray-900">{campaign.replied_count}</div>
-          <div className="text-xs text-gray-500">Replied</div>
-        </div>
+      <div className="flex justify-between text-sm text-gray-500">
+        <span>{campaign.contact_count} contacts</span>
+        <span>
+          {campaign.delivered_count} delivered • {campaign.read_count} read • {campaign.replied_count} replied
+        </span>
       </div>
       
       {campaign.status === 'draft' && (

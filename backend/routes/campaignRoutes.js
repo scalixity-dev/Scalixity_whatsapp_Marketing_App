@@ -137,4 +137,15 @@ router.patch('/:campaignId/messages/:contactId/status', async (req, res) => {
   }
 });
 
+// Send campaign messages
+router.post('/:id/send', async (req, res) => {
+  try {
+    const result = await campaignService.sendCampaignMessages(req.params.id);
+    res.json(result);
+  } catch (error) {
+    console.error(`Error in POST /api/campaigns/${req.params.id}/send:`, error);
+    res.status(500).json({ error: error.message || 'Failed to send campaign messages' });
+  }
+});
+
 module.exports = router; 
