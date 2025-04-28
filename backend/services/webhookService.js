@@ -1,5 +1,5 @@
 const axios = require('axios');
-const Contact = require('../models/Contact');
+const Contact = require('../models/contactModel');
 const Message = require('../models/Message');
 const { Op } = require('sequelize');
 

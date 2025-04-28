@@ -7,4 +7,11 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    allowedHosts: ['kea.mywire.org'],
+    port: 5200,
+    proxy: {
+      '/api': 'http://localhost:5100',
+    },
+  },
 });

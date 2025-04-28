@@ -1,7 +1,7 @@
 // frontend/src/services/contactService.js
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://kea.mywire.org:5100/api';
+const API_URL = '/api';
 
 interface Contact {
   id: number;

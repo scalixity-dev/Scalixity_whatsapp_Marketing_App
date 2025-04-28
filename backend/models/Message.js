@@ -1,7 +1,7 @@
 // models/Message.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const Contact = require('./Contact');
+const Contact = require('./contactModel');
 
 const Message = sequelize.define('Message', {
   id: {

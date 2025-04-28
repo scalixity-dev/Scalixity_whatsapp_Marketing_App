@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Template } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://kea.mywire.org:5100/api';
+const API_URL = '/api';
 
 class TemplateService {
   async getAllTemplates(): Promise<Template[]> {

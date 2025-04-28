@@ -1,6 +1,6 @@
 // services/messageService.js
 const Message = require('../models/Message');
-const Contact = require('../models/Contact');
+const Contact = require('../models/contactModel');
 const { Op } = require('sequelize');
 
 class MessageService {
