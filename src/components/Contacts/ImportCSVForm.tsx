@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, File, X, Check } from 'lucide-react';
+import { UploadCloud, File, X } from 'lucide-react';
 
 interface ImportCSVFormProps {
   onImport: (csvData: string) => Promise<void>;

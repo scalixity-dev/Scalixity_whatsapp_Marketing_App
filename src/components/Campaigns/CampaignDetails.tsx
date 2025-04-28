@@ -15,8 +15,6 @@ interface CampaignDetailsProps {
 const CampaignDetails: React.FC<CampaignDetailsProps> = ({
   campaign,
   templates,
-  contacts,
-  groups,
   onClose,
   onEdit,
   onDelete

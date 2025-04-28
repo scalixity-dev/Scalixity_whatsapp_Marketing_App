@@ -1,4 +1,4 @@
-import { Contact, Group } from '../types';
+import { Group } from '../types';
 
 interface CreateGroupData {
   name: string;

@@ -3,11 +3,25 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+interface Contact {
+  id: number;
+  name: string;
+  phone: string;
+  email?: string;
+  status?: string;
+  lastContacted?: string;
+  [key: string]: string | number | undefined; // For additional dynamic properties
+}
+
+interface ContactStatus {
+  status: string;
+}
+
 export const contactService = {
   /**
    * Get all contacts
    */
-  getAllContacts: async () => {
+  getAllContacts: async (): Promise<Contact[]> => {
     try {
       const response = await axios.get(`${API_URL}/contacts`);
       return response.data.data;
@@ -20,7 +34,7 @@ export const contactService = {
   /**
    * Get a contact by ID
    */
-  getContactById: async (id: any) => {
+  getContactById: async (id: number): Promise<Contact> => {
     try {
       const response = await axios.get(`${API_URL}/contacts/${id}`);
       return response.data.data;
@@ -33,7 +47,7 @@ export const contactService = {
   /**
    * Create a new contact
    */
-  createContact: async (contactData: any) => {
+  createContact: async (contactData: Partial<Contact>): Promise<Contact> => {
     try {
       const response = await axios.post(`${API_URL}/contacts`, contactData);
       return response.data.data;
@@ -46,7 +60,7 @@ export const contactService = {
   /**
    * Update a contact
    */
-  updateContact: async (id: any, contactData: any) => {
+  updateContact: async (id: number, contactData: Partial<Contact>): Promise<Contact> => {
     try {
       const response = await axios.put(`${API_URL}/contacts/${id}`, contactData);
       return response.data.data;
@@ -59,7 +73,7 @@ export const contactService = {
   /**
    * Delete a contact
    */
-  deleteContact: async (id: any) => {
+  deleteContact: async (id: number): Promise<void> => {
     try {
       const response = await axios.delete(`${API_URL}/contacts/${id}`);
       return response.data;
@@ -72,7 +86,7 @@ export const contactService = {
   /**
    * Import contacts from CSV
    */
-  importContactsFromCSV: async (csvData: any) => {
+  importContactsFromCSV: async (csvData: string): Promise<Contact[]> => {
     try {
       const response = await axios.post(`${API_URL}/contacts/import`, { csvData });
       return response.data.data.imported;
@@ -85,7 +99,7 @@ export const contactService = {
   /**
    * Export contacts to CSV
    */
-  exportContactsToCSV: async () => {
+  exportContactsToCSV: async (): Promise<boolean> => {
     try {
       const response = await axios.get(`${API_URL}/contacts/export/csv`, {
         responseType: 'blob'
@@ -110,7 +124,7 @@ export const contactService = {
   /**
    * Update contact status
    */
-  updateContactStatus: async (id: any, status: any) => {
+  updateContactStatus: async (id: number, status: ContactStatus): Promise<Contact> => {
     try {
       const response = await axios.patch(`${API_URL}/contacts/${id}/status`, { status });
       return response.data.data;
@@ -123,7 +137,7 @@ export const contactService = {
   /**
    * Update last contacted date to now
    */
-  updateLastContacted: async (id: any) => {
+  updateLastContacted: async (id: number): Promise<Contact> => {
     try {
       const response = await axios.patch(`${API_URL}/contacts/${id}/last-contacted`);
       return response.data.data;

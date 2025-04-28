@@ -1,4 +1,4 @@
-import { DashboardStats, Message, Campaign, Contact } from '../types';
+import { DashboardStats, Message } from '../types';
 import { mockDashboardStats } from '../data/mockData';
 import { messageService } from './messageService';
 import { campaignService } from './campaignService';
@@ -11,8 +11,7 @@ class AnalyticsService {
     // For now, we'll return mock data but gradually transition to real calculations
     
     try {
-      const [messages, campaigns, contacts] = await Promise.all([
-        messageService.getAllMessages(),
+      const [campaigns, contacts] = await Promise.all([
         campaignService.getAllCampaigns(),
         contactService.getAllContacts()
       ]);
@@ -43,10 +42,10 @@ class AnalyticsService {
     messages: Message[];
   }> {
     try {
-      const messages = await messageService.getMessagesByCampaign(campaignId);
+      const messages = await messageService.getMessagesByCampaign();
       const campaign = await campaignService.getCampaignById(campaignId);
       
-      if (!campaign || !campaign.contactCount || campaign.contactCount === 0) {
+      if (!campaign || !campaign.contact_count || campaign.contact_count === 0) {
         return {
           deliveryRate: 0,
           openRate: 0,

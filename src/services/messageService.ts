@@ -47,12 +47,12 @@ class MessageService {
     return response.data;
   }
   
-  getMessageById(id: number): Promise<Message | undefined> {
+  getMessageById(): Promise<Message | undefined> {
     // This method is no longer used in the new implementation
     throw new Error('Method not implemented');
   }
   
-  getMessagesByCampaign(campaignId: number): Promise<Message[]> {
+  getMessagesByCampaign(): Promise<Message[]> {
     // This method is no longer used in the new implementation
     throw new Error('Method not implemented');
   }

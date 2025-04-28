@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, Contact } from '../../types';
-import { Send, Paperclip, Image, X, File, Mic, Video } from 'lucide-react';
+import { Send, Paperclip, X, File, Mic } from 'lucide-react';
 
 interface ChatInterfaceProps {
   messages: Message[];

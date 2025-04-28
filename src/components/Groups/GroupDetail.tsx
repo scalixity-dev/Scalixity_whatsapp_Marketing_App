@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, UserPlus, UserMinus } from 'lucide-react';
+import {  UserPlus, UserMinus } from 'lucide-react';
 import { Contact } from '../../types';
 
 interface GroupDetailProps {

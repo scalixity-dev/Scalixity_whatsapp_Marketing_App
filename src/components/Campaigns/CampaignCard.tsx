@@ -29,37 +29,11 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick, onStatus
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return <AlertCircle className="h-4 w-4" />;
-      case 'scheduled':
-        return <Clock className="h-4 w-4" />;
-      case 'in_progress':
-        return <MessageSquare className="h-4 w-4" />;
-      case 'completed':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'failed':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return <AlertCircle className="h-4 w-4" />;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
-    onStatusChange(campaign.id, e.target.value);
+    if (onStatusChange) {
+      onStatusChange(campaign.id, e.target.value);
+    }
   };
 
   return (
@@ -103,7 +77,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick, onStatus
             className="text-sm text-emerald-600 hover:text-emerald-700"
             onClick={(e) => {
               e.stopPropagation();
-              onStatusChange(campaign.id, 'in_progress');
+              if (onStatusChange) {
+                onStatusChange(campaign.id, 'in_progress');
+              }
             }}
           >
             Start Now
@@ -112,7 +88,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick, onStatus
             className="text-sm text-gray-600 hover:text-gray-700"
             onClick={(e) => {
               e.stopPropagation();
-              onStatusChange(campaign.id, 'draft');
+              if (onStatusChange) {
+                onStatusChange(campaign.id, 'draft');
+              }
             }}
           >
             Move to Draft
@@ -126,7 +104,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick, onStatus
             className="w-full text-sm text-emerald-600 hover:text-emerald-700"
             onClick={(e) => {
               e.stopPropagation();
-              onStatusChange(campaign.id, 'completed');
+              if (onStatusChange) {
+                onStatusChange(campaign.id, 'completed');
+              }
             }}
           >
             Mark as Completed

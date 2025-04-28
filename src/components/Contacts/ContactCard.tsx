@@ -6,7 +6,7 @@ interface ContactCardProps {
   contact: Contact;
   onClick: (contact: Contact) => void;
   onDelete: (id: string) => Promise<void>;
-  onUpdateStatus: (id: string, status: string) => Promise<void>;
+  onUpdateStatus: (id: string, status: 'active' | 'inactive' | 'blocked' | 'responded') => Promise<void>;
   onUpdateLastContacted: (id: string) => Promise<void>;
 }
 
@@ -32,17 +32,6 @@ const ContactCard: React.FC<ContactCardProps> = ({
     }
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
-    
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm(`Are you sure you want to delete ${contact.name}?`)) {
@@ -52,7 +41,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
 
   const handleStatusChange = async (e: React.MouseEvent, newStatus: string) => {
     e.stopPropagation();
-    await onUpdateStatus(contact.id.toString(), newStatus);
+    await onUpdateStatus(contact.id.toString(), newStatus as 'active' | 'inactive' | 'blocked' | 'responded');
   };
 
   const handleLastContacted = async (e: React.MouseEvent) => {

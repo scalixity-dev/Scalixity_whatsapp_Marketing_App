@@ -16,6 +16,7 @@ export interface Group {
   description?: string;
   contacts: Contact[];
   contactCount: number;
+  Contacts?: Contact[]; // For API response compatibility
 }
 
 const Groups: React.FC = () => {
@@ -42,10 +43,7 @@ const Groups: React.FC = () => {
       console.log('Raw groups data from API:', data);
       
       setGroups(data.map(group => {
-        // Handle both possible API response formats (Contacts or contacts)
-        const contactsArray = Array.isArray(group.Contacts) 
-          ? group.Contacts 
-          : (Array.isArray(group.contacts) ? group.contacts : []);
+        const contactsArray = Array.isArray(group.contacts) ? group.contacts : [];
           
         return {
           ...group,
@@ -64,7 +62,15 @@ const Groups: React.FC = () => {
   const fetchContacts = async () => {
     try {
       const data = await contactService.getAllContacts();
-      setContacts(data);
+      setContacts(data.map(contact => ({
+        ...contact,
+        phone_number: contact.phone,
+        created_at: String(contact.created_at || new Date().toISOString()),
+        updated_at: String(contact.updated_at || new Date().toISOString()),
+        imported_from: String(contact.imported_from || 'manual'),
+        imported_at: new Date(contact.imported_at || Date.now()),
+        status: (contact.status as 'active' | 'inactive' | 'blocked' | 'responded') || 'active'
+      })));
     } catch (error) {
       console.error('Error fetching contacts:', error);
     }
@@ -72,13 +78,10 @@ const Groups: React.FC = () => {
 
   const handleSelectGroup = async (id: string) => {
     try {
-      const group = await groupService.getGroupById(id);
+      const group = await groupService.getGroupById(Number(id));
       console.log('Selected group details:', group);
       
-      // Handle both possible API response formats
-      const contactsArray = Array.isArray(group.Contacts) 
-        ? group.Contacts 
-        : (Array.isArray(group.contacts) ? group.contacts : []);
+      const contactsArray = Array.isArray(group.contacts) ? group.contacts : [];
       
       setSelectedGroup({
         ...group,
@@ -93,7 +96,10 @@ const Groups: React.FC = () => {
 
   const handleCreateGroup = async (groupData: { name: string; description: string; contactIds: string[] }) => {
     try {
-      const newGroup = await groupService.createGroup(groupData);
+      const newGroup = await groupService.createGroup({
+        ...groupData,
+        contactIds: groupData.contactIds.map(id => Number(id))
+      });
       console.log('New group created:', newGroup);
       
       // Fetch all groups to ensure we have the latest data
@@ -122,7 +128,10 @@ const Groups: React.FC = () => {
     if (!editingGroup) return;
     
     try {
-      await groupService.updateGroup(editingGroup.id, groupData);
+      await groupService.updateGroup(Number(editingGroup.id), {
+        ...groupData,
+        contactIds: groupData.contactIds.map(id => Number(id))
+      });
       await fetchGroups();
       
       if (selectedGroup && selectedGroup.id === editingGroup.id) {
@@ -138,7 +147,7 @@ const Groups: React.FC = () => {
 
   const handleDeleteGroup = async (id: string) => {
     try {
-      await groupService.deleteGroup(id);
+      await groupService.deleteGroup(Number(id));
       await fetchGroups();
       
       if (selectedGroup && selectedGroup.id === id) {
@@ -149,13 +158,9 @@ const Groups: React.FC = () => {
     }
   };
 
-  const handleAddContactsToGroup = (groupId: string) => {
-    setShowAddContactsForm(true);
-  };
-
   const handleRemoveContactFromGroup = async (groupId: string, contactId: string) => {
     try {
-      await groupService.removeContactFromGroup(groupId, contactId);
+      await groupService.removeContactFromGroup(Number(groupId), Number(contactId));
       
       if (selectedGroup && selectedGroup.id === groupId) {
         handleSelectGroup(groupId);
@@ -165,9 +170,13 @@ const Groups: React.FC = () => {
     }
   };
 
+  const handleAddContactsToGroup = () => {
+    setShowAddContactsForm(true);
+  };
+
   const handleSubmitAddContacts = async (groupId: string, contactIds: string[]) => {
     try {
-      await groupService.addContactsToGroup(groupId, contactIds);
+      await groupService.addContactsToGroup(Number(groupId), contactIds.map(id => Number(id)));
       
       if (selectedGroup && selectedGroup.id === groupId) {
         handleSelectGroup(groupId);
@@ -280,7 +289,7 @@ const Groups: React.FC = () => {
           <div className="w-full">
             <GroupDetail
               group={selectedGroup}
-              onAddContacts={() => handleAddContactsToGroup(selectedGroup.id)}
+              onAddContacts={() => handleAddContactsToGroup()}
               onRemoveContact={(contactId) => handleRemoveContactFromGroup(selectedGroup.id, contactId)}
             />
           </div>
@@ -322,7 +331,7 @@ const Groups: React.FC = () => {
           contacts={contacts.map(contact => ({
             id: String(contact.id),
             name: contact.name,
-            phone: contact.phone
+            phone: contact.phone_number
           }))}
           groupId={selectedGroup.id}
           onSubmit={handleSubmitAddContacts}

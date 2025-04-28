@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Upload, Download } from 'lucide-react';
-import { Contact, ImportCSVFormProps } from '../types';
+import { Contact, ContactStatus } from '../types';
 import ContactCard from '../components/Contacts/ContactCard';
 import ContactList from '../components/Contacts/ContactList';
 import ImportCSVForm from '../components/Contacts/ImportCSVForm';
@@ -24,7 +24,21 @@ const Contacts: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await contactService.getAllContacts();
-      setContacts(data);
+      setContacts(data.map(contact => ({
+        id: Number(contact.id),
+        name: String(contact.name),
+        phone_number: String(contact.phone),
+        email: contact.email,
+        company: contact.company ? String(contact.company) : undefined,
+        position: contact.position ? String(contact.position) : undefined,
+        created_at: String(contact.created_at || new Date().toISOString()),
+        updated_at: String(contact.updated_at || new Date().toISOString()),
+        imported_from: String(contact.imported_from || 'manual'),
+        imported_at: new Date(contact.imported_at || Date.now()),
+        last_contacted: contact.last_contacted ? new Date(contact.last_contacted) : undefined,
+        status: (contact.status || 'active') as ContactStatus,
+        notes: contact.notes ? String(contact.notes) : undefined
+      })));
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
@@ -40,7 +54,15 @@ const Contacts: React.FC = () => {
     setIsImporting(true);
     try {
       const importedContacts = await contactService.importContactsFromCSV(csvData);
-      setContacts(prev => [...prev, ...importedContacts]);
+      setContacts(prev => [...prev, ...importedContacts.map(contact => ({
+        ...contact,
+        phone_number: String(contact.phone),
+        created_at: String(contact.created_at || new Date().toISOString()),
+        updated_at: String(contact.updated_at || new Date().toISOString()),
+        imported_from: String(contact.imported_from || 'manual'),
+        imported_at: new Date(contact.imported_at || Date.now()),
+        status: (contact.status as 'active' | 'inactive' | 'blocked' | 'responded') || 'active'
+      }))]);
       setShowImportForm(false);
     } catch (error) {
       console.error('Error importing contacts:', error);
@@ -63,29 +85,29 @@ const Contacts: React.FC = () => {
   
   const handleCreateContact = async (contactData: Omit<Contact, 'id'>) => {
     try {
-      const newContact = await contactService.createContact(contactData);
-      setContacts(prev => [...prev, newContact]);
+      const newContact = await contactService.createContact({
+        ...contactData,
+        imported_at: contactData.imported_at?.toISOString(),
+        last_contacted: contactData.last_contacted?.toISOString()
+      });
+      setContacts(prev => [...prev, {
+        ...newContact,
+        phone_number: String(newContact.phone),
+        created_at: String(newContact.created_at || new Date().toISOString()),
+        updated_at: String(newContact.updated_at || new Date().toISOString()),
+        imported_from: String(newContact.imported_from || 'manual'),
+        imported_at: new Date(newContact.imported_at || Date.now()),
+        status: (newContact.status as 'active' | 'inactive' | 'blocked' | 'responded') || 'active'
+      }]);
       setShowAddForm(false);
     } catch (error) {
       console.error('Error creating contact:', error);
     }
   };
   
-  const handleUpdateContact = async (id: string, contactData: Partial<Contact>) => {
-    try {
-      const updatedContact = await contactService.updateContact(id, contactData);
-      setContacts(prev => prev.map(contact => 
-        contact.id === Number(id) ? updatedContact : contact
-      ));
-      setSelectedContact(null);
-    } catch (error) {
-      console.error(`Error updating contact ${id}:`, error);
-    }
-  };
-  
   const handleDeleteContact = async (id: string) => {
     try {
-      await contactService.deleteContact(id);
+      await contactService.deleteContact(Number(id));
       setContacts(prev => prev.filter(contact => contact.id !== Number(id)));
       if (selectedContact?.id === Number(id)) {
         setSelectedContact(null);
@@ -95,14 +117,30 @@ const Contacts: React.FC = () => {
     }
   };
   
-  const handleUpdateContactStatus = async (id: string, status: string) => {
+  const handleUpdateContactStatus = async (id: string, status: 'active' | 'inactive' | 'blocked' | 'responded') => {
     try {
-      const updatedContact = await contactService.updateContactStatus(id, status);
+      const updatedContact = await contactService.updateContactStatus(Number(id), { status });
       setContacts(prev => prev.map(contact => 
-        contact.id === Number(id) ? updatedContact : contact
+        contact.id === Number(id) ? {
+          ...updatedContact,
+          phone_number: String(updatedContact.phone),
+          created_at: String(updatedContact.created_at || contact.created_at),
+          updated_at: String(updatedContact.updated_at || new Date().toISOString()),
+          imported_from: String(updatedContact.imported_from || contact.imported_from),
+          imported_at: new Date(updatedContact.imported_at || contact.imported_at),
+          status: (updatedContact.status as 'active' | 'inactive' | 'blocked' | 'responded') || contact.status
+        } : contact
       ));
       if (selectedContact?.id === Number(id)) {
-        setSelectedContact(updatedContact);
+        setSelectedContact({
+          ...updatedContact,
+          phone_number: String(updatedContact.phone),
+          created_at: String(updatedContact.created_at || selectedContact.created_at),
+          updated_at: String(updatedContact.updated_at || new Date().toISOString()),
+          imported_from: String(updatedContact.imported_from || selectedContact.imported_from),
+          imported_at: new Date(updatedContact.imported_at || selectedContact.imported_at),
+          status: (updatedContact.status as 'active' | 'inactive' | 'blocked' | 'responded') || selectedContact.status
+        });
       }
     } catch (error) {
       console.error(`Error updating contact status ${id}:`, error);
@@ -111,12 +149,28 @@ const Contacts: React.FC = () => {
   
   const handleUpdateLastContacted = async (id: string) => {
     try {
-      const updatedContact = await contactService.updateLastContacted(id);
+      const updatedContact = await contactService.updateLastContacted(Number(id));
       setContacts(prev => prev.map(contact => 
-        contact.id === Number(id) ? updatedContact : contact
+        contact.id === Number(id) ? {
+          ...updatedContact,
+          phone_number: String(updatedContact.phone),
+          created_at: String(updatedContact.created_at || contact.created_at),
+          updated_at: String(updatedContact.updated_at || new Date().toISOString()),
+          imported_from: String(updatedContact.imported_from || contact.imported_from),
+          imported_at: new Date(updatedContact.imported_at || contact.imported_at),
+          status: (updatedContact.status as 'active' | 'inactive' | 'blocked' | 'responded') || contact.status
+        } : contact
       ));
       if (selectedContact?.id === Number(id)) {
-        setSelectedContact(updatedContact);
+        setSelectedContact({
+          ...updatedContact,
+          phone_number: String(updatedContact.phone),
+          created_at: String(updatedContact.created_at || selectedContact.created_at),
+          updated_at: String(updatedContact.updated_at || new Date().toISOString()),
+          imported_from: String(updatedContact.imported_from || selectedContact.imported_from),
+          imported_at: new Date(updatedContact.imported_at || selectedContact.imported_at),
+          status: (updatedContact.status as 'active' | 'inactive' | 'blocked' | 'responded') || selectedContact.status
+        });
       }
     } catch (error) {
       console.error(`Error updating last contacted for ${id}:`, error);
@@ -234,7 +288,7 @@ const Contacts: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Phone Number</h3>
-                <p className="mt-1">{selectedContact.phone}</p>
+                <p className="mt-1">{selectedContact.phone_number}</p>
               </div>
               {selectedContact.company && (
                 <div>

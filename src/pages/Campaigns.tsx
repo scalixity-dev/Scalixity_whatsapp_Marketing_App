@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Play, Pause, RefreshCw } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Campaign, Template, Contact, Group } from '../types';
 import CampaignCard from '../components/Campaigns/CampaignCard';
 import CampaignForm from '../components/Campaigns/CampaignForm';
@@ -33,7 +33,15 @@ const Campaigns: React.FC = () => {
         
         setCampaigns(campaignsData);
         setTemplates(templatesData);
-        setContacts(contactsData);
+        setContacts(contactsData.map(contact => ({
+          ...contact,
+          phone_number: contact.phone,
+          created_at: String(contact.created_at || new Date().toISOString()),
+          updated_at: String(contact.updated_at || new Date().toISOString()),
+          imported_from: String(contact.imported_from || 'manual'),
+          imported_at: new Date(contact.imported_at || Date.now()),
+          status: (contact.status as 'active' | 'inactive' | 'blocked' | 'responded') || 'active'
+        })));
         setGroups(groupsData);
       } catch (error) {
         console.error('Error fetching data:', error);

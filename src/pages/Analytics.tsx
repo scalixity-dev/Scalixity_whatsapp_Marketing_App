@@ -3,7 +3,7 @@ import { BarChart2, TrendingUp, UserCheck, Clock } from 'lucide-react';
 import StatsCard from '../components/Dashboard/StatsCard';
 import { DashboardStats } from '../types';
 import { analyticsService } from '../services/analyticsService';
-import { campaignService } from '../services/campaignService';
+
 
 const Analytics: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -26,7 +26,8 @@ const Analytics: React.FC = () => {
   }, []);
   
   // Format percentage
-  const formatPercentage = (num: number): string => {
+  const formatPercentage = (value: string | number): string => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
     return `${num.toFixed(1)}%`;
   };
   

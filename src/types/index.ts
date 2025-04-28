@@ -26,6 +26,7 @@ export interface Group {
   description?: string;
   created_at?: string;
   updated_at?: string;
+  contacts?: Contact[];
 }
 
 export interface Campaign {
