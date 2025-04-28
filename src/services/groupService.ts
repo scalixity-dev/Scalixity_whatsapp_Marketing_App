@@ -6,7 +6,7 @@ interface CreateGroupData {
   contactIds: number[];
 }
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://kea.mywire.org:5100/api';
 
 export const groupService = {
   getAllGroups: async (): Promise<Group[]> => {
