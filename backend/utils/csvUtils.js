@@ -10,11 +10,11 @@ const parseCSV = (csvData) => {
 
     return records.map(record => ({
       name: record.name,
-      phoneNumber: record.phone_number || record.phoneNumber,
+      phone_number: record.phone_number || record.phone || record.phoneNumber || '',
       company: record.company,
       position: record.position,
-      importedFrom: 'CSV',
-      importedAt: new Date(),
+      imported_from: 'CSV',
+      imported_at: new Date(),
       status: 'active'
     }));
   } catch (error) {

@@ -12,7 +12,7 @@ const Contact = sequelize.define('Contact', {
     allowNull: false,
     field: 'name'
   },
-  phoneNumber: {
+  phone_number: {
     type: DataTypes.STRING,
     allowNull: false,
     field: 'phone_number'
@@ -27,17 +27,17 @@ const Contact = sequelize.define('Contact', {
     allowNull: true,
     field: 'position'
   },
-  importedFrom: {
+  imported_from: {
     type: DataTypes.STRING,
     allowNull: true,
     field: 'imported_from'
   },
-  importedAt: {
+  imported_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
     field: 'imported_at'
   },
-  lastContacted: {
+  last_contacted: {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'last_contacted'

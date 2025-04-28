@@ -27,7 +27,7 @@ const Contacts: React.FC = () => {
       setContacts(data.map(contact => ({
         id: Number(contact.id),
         name: String(contact.name),
-        phone_number: String(contact.phone),
+        phone_number: String(contact.phone_number || contact.phone || ''),
         email: contact.email,
         company: contact.company ? String(contact.company) : undefined,
         position: contact.position ? String(contact.position) : undefined,
@@ -56,7 +56,7 @@ const Contacts: React.FC = () => {
       const importedContacts = await contactService.importContactsFromCSV(csvData);
       setContacts(prev => [...prev, ...importedContacts.map(contact => ({
         ...contact,
-        phone_number: String(contact.phone),
+        phone_number: String(contact.phone_number || contact.phone || ''),
         created_at: String(contact.created_at || new Date().toISOString()),
         updated_at: String(contact.updated_at || new Date().toISOString()),
         imported_from: String(contact.imported_from || 'manual'),
@@ -92,7 +92,7 @@ const Contacts: React.FC = () => {
       });
       setContacts(prev => [...prev, {
         ...newContact,
-        phone_number: String(newContact.phone),
+        phone_number: String(newContact.phone_number || newContact.phone || ''),
         created_at: String(newContact.created_at || new Date().toISOString()),
         updated_at: String(newContact.updated_at || new Date().toISOString()),
         imported_from: String(newContact.imported_from || 'manual'),
@@ -123,7 +123,7 @@ const Contacts: React.FC = () => {
       setContacts(prev => prev.map(contact => 
         contact.id === Number(id) ? {
           ...updatedContact,
-          phone_number: String(updatedContact.phone),
+          phone_number: String(updatedContact.phone_number || updatedContact.phone || ''),
           created_at: String(updatedContact.created_at || contact.created_at),
           updated_at: String(updatedContact.updated_at || new Date().toISOString()),
           imported_from: String(updatedContact.imported_from || contact.imported_from),
@@ -134,7 +134,7 @@ const Contacts: React.FC = () => {
       if (selectedContact?.id === Number(id)) {
         setSelectedContact({
           ...updatedContact,
-          phone_number: String(updatedContact.phone),
+          phone_number: String(updatedContact.phone_number || updatedContact.phone || ''),
           created_at: String(updatedContact.created_at || selectedContact.created_at),
           updated_at: String(updatedContact.updated_at || new Date().toISOString()),
           imported_from: String(updatedContact.imported_from || selectedContact.imported_from),

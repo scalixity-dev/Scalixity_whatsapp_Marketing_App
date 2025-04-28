@@ -22,53 +22,37 @@ class WebhookService {
    * Removes all non-numeric characters and keeps only digits
    */
   normalizePhoneNumber(phoneNumber) {
-    return phoneNumber.replace(/\D/g, '');
+    if (!phoneNumber) {
+      console.warn('normalizePhoneNumber called with undefined or null phone number');
+      return '';
+    }
+    return phoneNumber.toString().replace(/\D/g, '');
   }
 
   /**
    * Process incoming WhatsApp messages
    */
   async processIncomingMessage(body) {
-    // Log the incoming payload for debugging
-    console.log('Received webhook payload:', JSON.stringify(body, null, 2));
+    try {
+      // Validate the webhook payload structure
+      if (!body || !body.entry || !body.entry[0] || !body.entry[0].changes || !body.entry[0].changes[0] || !body.entry[0].changes[0].value) {
+        console.error('Invalid webhook payload structure');
+        return { status: 400, error: 'Invalid webhook payload structure' };
+      }
 
-    // Basic validation of the webhook payload structure
-    if (!body.object || body.object !== 'whatsapp_business_account') {
-      console.log("Invalid webhook object type");
-      return { status: 400, error: "Invalid webhook object type" };
-    }
+      const change = body.entry[0].changes[0];
+      const value = change.value;
 
-    if (!body.entry || !Array.isArray(body.entry) || body.entry.length === 0) {
-      console.log("Invalid webhook entry structure");
-      return { status: 400, error: "Invalid webhook entry structure" };
-    }
+      // Handle message webhook
+      if (value.messages && value.messages[0]) {
+        const message = value.messages[0];
+        const fromNumber = message.from;
 
-    const entry = body.entry[0];
-    if (!entry.changes || !Array.isArray(entry.changes) || entry.changes.length === 0) {
-      console.log("Invalid webhook changes structure");
-      return { status: 400, error: "Invalid webhook changes structure" };
-    }
+        if (!fromNumber) {
+          console.error('Missing from number in message');
+          return { status: 400, error: 'Missing from number in message' };
+        }
 
-    const change = entry.changes[0];
-    if (!change.value) {
-      console.log("Invalid webhook value structure");
-      return { status: 400, error: "Invalid webhook value structure" };
-    }
-
-    // Handle different types of webhook payloads
-    if (change.value.messages && Array.isArray(change.value.messages) && change.value.messages.length > 0) {
-      // This is a message webhook
-      const message = change.value.messages[0];
-      const phoneNumberId = change.value.metadata.phone_number_id;
-      const fromNumber = message.from;
-      const messageBody = message.text?.body;
-      const timestamp = new Date();
-      const messageId = message.id;
-      const messageType = message.type;
-
-      console.log(`Received ${messageType} message from ${fromNumber}: ${messageBody}`);
-
-      try {
         // Normalize the incoming phone number
         const normalizedIncoming = this.normalizePhoneNumber(fromNumber);
         const last10Digits = normalizedIncoming.slice(-10);
@@ -87,7 +71,9 @@ class WebhookService {
         
         console.log("Sample contacts in database:");
         allContacts.forEach(c => {
-          console.log(`- ID: ${c.id}, Name: ${c.name}, Phone: ${c.phone_number}, Normalized: ${this.normalizePhoneNumber(c.phone_number)}`);
+          if (c && c.phone_number) {
+            console.log(`- ID: ${c.id}, Name: ${c.name}, Phone: ${c.phone_number}, Normalized: ${this.normalizePhoneNumber(c.phone_number)}`);
+          }
         });
         
         // Find all contacts and manually compare normalized phone numbers
@@ -115,18 +101,18 @@ class WebhookService {
           const newMessage = await Message.create({
             contactId: matchedContact.id,
             direction: 'incoming',
-            content: messageBody || '',
-            messageType: messageType || 'text',
-            timestamp: timestamp,
+            content: message.text?.body || '',
+            messageType: message.type || 'text',
+            timestamp: new Date(),
             status: 'delivered',
-            messageId: messageId,
+            messageId: message.id,
             isCampaignMessage: false
           });
 
           // Update contact's last contacted time and status
           await Contact.update(
             { 
-              last_contacted: timestamp,
+              last_contacted: new Date(),
               status: 'responded' 
             },
             { 
@@ -148,25 +134,25 @@ class WebhookService {
           // Optionally create a new contact here if desired
           return { status: 200, data: { message: "Message received, but contact not found in database" } };
         }
-      } catch (error) {
-        console.error("Error processing incoming message:", error);
-        return { status: 500, data: { error: "Failed to process message" } };
+      } else if (value.statuses && Array.isArray(value.statuses) && value.statuses.length > 0) {
+        // This is a status webhook
+        const status = value.statuses[0];
+        console.log(`Received status update for message ${status.id}: ${status.status}`);
+        return { status: 200, data: { type: 'status', status: status.status } };
+
+      } else if (value.errors && Array.isArray(value.errors) && value.errors.length > 0) {
+        // This is an error webhook
+        const error = value.errors[0];
+        console.error(`Received error from WhatsApp API: ${error.code} - ${error.title}`);
+        return { status: 400, error: error.title };
+
+      } else {
+        console.log("Unhandled webhook payload type");
+        return { status: 200, data: { type: 'unhandled' } };
       }
-    } else if (change.value.statuses && Array.isArray(change.value.statuses) && change.value.statuses.length > 0) {
-      // This is a status webhook
-      const status = change.value.statuses[0];
-      console.log(`Received status update for message ${status.id}: ${status.status}`);
-      return { status: 200, data: { type: 'status', status: status.status } };
-
-    } else if (change.value.errors && Array.isArray(change.value.errors) && change.value.errors.length > 0) {
-      // This is an error webhook
-      const error = change.value.errors[0];
-      console.error(`Received error from WhatsApp API: ${error.code} - ${error.title}`);
-      return { status: 400, error: error.title };
-
-    } else {
-      console.log("Unhandled webhook payload type");
-      return { status: 200, data: { type: 'unhandled' } };
+    } catch (error) {
+      console.error("Error processing incoming message:", error);
+      return { status: 500, data: { error: "Failed to process message" } };
     }
   }
 
